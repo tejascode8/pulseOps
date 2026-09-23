@@ -19,6 +19,14 @@ connectDB();
 // Middleware
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
+
+// Ensure DB connection for serverless cold-starts
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    await connectDB();
+  }
+  next();
+});
 // Log HTTP requests while skipping noisy health check heartbeats
 app.use(
   morgan('dev', {
