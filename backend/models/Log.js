@@ -52,6 +52,10 @@ const logSchema = new mongoose.Schema(
   }
 );
 
+// Compound index for lightning-fast user log queries
 logSchema.index({ userId: 1, createdAt: -1 });
+
+// Native MongoDB TTL Index: Auto-prune telemetry logs older than 3 days (259,200 seconds)
+logSchema.index({ createdAt: 1 }, { expireAfterSeconds: 259200 });
 
 export const Log = mongoose.model('Log', logSchema);

@@ -37,6 +37,7 @@ export function useProjectMonitor() {
   // Keep references to open tab window handles for auto-closing
   const openTabsRef = useRef({});
   const projectsRef = useRef(projects);
+  const lastSyncMapRef = useRef({}); // { [projectId]: { timestamp, status } }
   useEffect(() => {
     projectsRef.current = projects;
   }, [projects]);
@@ -108,9 +109,9 @@ export function useProjectMonitor() {
     };
   }, [user, isAuthenticated, setProjects, setLogs]);
 
-  // Log adding helper - records locally and syncs to MongoDB
+  // Log adding helper - records locally with 0ms latency and selectively syncs key events to MongoDB
   const addLog = useCallback(
-    (logEntry) => {
+    (logEntry, isPersistent = true) => {
       const newEntry = {
         id: 'log-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
         timestamp: new Date().toLocaleTimeString(),
@@ -119,8 +120,8 @@ export function useProjectMonitor() {
 
       setLogs((prev) => [newEntry, ...prev.slice(0, 49)]);
 
-      if (isAuthenticated) {
-        // Save to MongoDB asynchronously
+      if (isAuthenticated && isPersistent) {
+        // Save significant telemetry / audit events to MongoDB
         createLogApi(logEntry).catch(() => {});
       }
     },
@@ -172,7 +173,11 @@ export function useProjectMonitor() {
               );
 
               if (isAuthenticated) {
-                // Sync updated cycle to MongoDB
+                // Sync updated cycle to MongoDB and update sync timestamp
+                lastSyncMapRef.current[id] = {
+                  timestamp: currentNow,
+                  status: 'active',
+                };
                 updateProjectApi(id, {
                   completedCycles: nextCycles,
                   nextCheckTimestamp: nextTimestamp,
@@ -277,30 +282,49 @@ export function useProjectMonitor() {
       );
 
       if (isAuthenticated) {
-        // Sync status & latency to MongoDB
-        updateProjectApi(projectId, {
-          status: checkResult.status,
-          statusCode: checkResult.statusCode,
-          latencyMs: checkResult.latencyMs,
-          statusMessage: checkResult.message,
-          lastChecked: new Date(),
-          completedCycles: nextCycles,
-          nextCheckTimestamp: nextTimestamp,
-        }).catch(() => {});
+        // Intelligent Write Throttling: Sync to MongoDB on manual action, on status transitions, or at most once every 3 minutes
+        const lastSync = lastSyncMapRef.current[projectId];
+        const statusChanged = !lastSync || lastSync.status !== checkResult.status;
+        const timeSinceLastSync = lastSync ? Date.now() - lastSync.timestamp : Infinity;
+        const shouldSyncToDb = manual || statusChanged || timeSinceLastSync >= 180000;
+
+        if (shouldSyncToDb) {
+          lastSyncMapRef.current[projectId] = {
+            timestamp: Date.now(),
+            status: checkResult.status,
+          };
+          updateProjectApi(projectId, {
+            status: checkResult.status,
+            statusCode: checkResult.statusCode,
+            latencyMs: checkResult.latencyMs,
+            statusMessage: checkResult.message,
+            lastChecked: new Date(),
+            completedCycles: nextCycles,
+            nextCheckTimestamp: nextTimestamp,
+          }).catch(() => {});
+        }
       }
 
       const stayText = willHaveStaySession
         ? ` • Staying on site for ${stayDurationSec}s (${stayMode === 'tab' ? 'Auto-Close Tab' : 'Silent Background Frame'})`
         : '';
 
-      addLog({
-        projectName: project.name,
-        url: project.url,
-        status: checkResult.status,
-        statusCode: checkResult.statusCode,
-        latencyMs: checkResult.latencyMs,
-        message: `${manual ? '[Manual Ping] ' : ''}${checkResult.message}${stayText}`,
-      });
+      // Selective persistence: Save to MongoDB for manual actions, status changes, or down events
+      const isStatusChange = !project.status || project.status !== checkResult.status;
+      const isDown = checkResult.status === 'down';
+      const shouldPersistLog = manual || isStatusChange || isDown;
+
+      addLog(
+        {
+          projectName: project.name,
+          url: project.url,
+          status: checkResult.status,
+          statusCode: checkResult.statusCode,
+          latencyMs: checkResult.latencyMs,
+          message: `${manual ? '[Manual Ping] ' : ''}${checkResult.message}${stayText}`,
+        },
+        shouldPersistLog
+      );
 
       setCheckingIds((prev) => {
         const next = new Set(prev);

@@ -34,6 +34,21 @@ export async function createLog(req, res) {
       timestamp: new Date().toLocaleTimeString(),
     });
 
+    // Enforce strict rolling cap: Keep max 100 logs per user to protect MongoDB storage
+    const MAX_USER_LOGS = 100;
+    Log.countDocuments({ userId: req.user._id }).then(async (total) => {
+      if (total > MAX_USER_LOGS) {
+        const excess = total - MAX_USER_LOGS;
+        const oldestLogs = await Log.find({ userId: req.user._id })
+          .sort({ createdAt: 1 })
+          .limit(excess)
+          .select('_id');
+        if (oldestLogs.length > 0) {
+          await Log.deleteMany({ _id: { $in: oldestLogs.map((l) => l._id) } });
+        }
+      }
+    }).catch(() => {});
+
     return res.status(201).json({ success: true, data: newLog });
   } catch (error) {
     console.error('Error in createLog:', error);
