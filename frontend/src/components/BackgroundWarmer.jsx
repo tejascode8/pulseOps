@@ -12,15 +12,15 @@ export default function BackgroundWarmer({ activeStaySessions }) {
   const sessionsRef = useRef(activeStaySessions);
   sessionsRef.current = activeStaySessions;
 
-  // Extract active background session URLs signature to detect genuine additions/removals
-  const backgroundUrls = Object.entries(activeStaySessions || {})
+  // Extract active background session signature (id + url) to detect genuine additions/removals
+  const backgroundSignature = Object.entries(activeStaySessions || {})
     .filter(([, s]) => s && s.mode === 'background' && s.url)
-    .map(([, s]) => s.url)
+    .map(([id, s]) => `${id}:${s.url}`)
     .sort()
     .join('|');
 
   useEffect(() => {
-    if (!backgroundUrls) return;
+    if (!backgroundSignature) return;
 
     const dispatchPulse = (url) => {
       if (!url) return;
@@ -53,7 +53,7 @@ export default function BackgroundWarmer({ activeStaySessions }) {
     }, 10000);
 
     return () => clearInterval(intervalId);
-  }, [backgroundUrls]);
+  }, [backgroundSignature]);
 
   return null;
 }
