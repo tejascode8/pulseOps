@@ -3,7 +3,7 @@ import { Log } from '../models/Log.js';
 // GET /api/logs - Fetch recent activity stream events for logged-in user
 export async function getLogs(req, res) {
   try {
-    const limit = Number(req.query.limit) || 100;
+    const limit = Number(req.query.limit) || 50;
     const logs = await Log.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(limit);
     return res.status(200).json({ success: true, count: logs.length, data: logs });
   } catch (error) {
@@ -34,8 +34,8 @@ export async function createLog(req, res) {
       timestamp: new Date().toLocaleTimeString(),
     });
 
-    // Enforce strict rolling cap: Keep max 100 logs per user to protect MongoDB storage
-    const MAX_USER_LOGS = 100;
+    // Enforce strict rolling cap: Keep max 50 logs per user in MongoDB
+    const MAX_USER_LOGS = 50;
     Log.countDocuments({ userId: req.user._id }).then(async (total) => {
       if (total > MAX_USER_LOGS) {
         const excess = total - MAX_USER_LOGS;

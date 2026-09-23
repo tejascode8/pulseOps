@@ -156,7 +156,7 @@ export async function bulkImportProjectsApi(projects) {
 }
 
 // Logs API Endpoints (Protected by User)
-export async function fetchLogs(limit = 60) {
+export async function fetchLogs(limit = 50) {
   const res = await request(`/logs?limit=${limit}`);
   return res?.data || [];
 }

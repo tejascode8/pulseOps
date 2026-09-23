@@ -72,8 +72,8 @@ export function useProjectMonitor() {
             setProjects(formatted);
           }
 
-          // Fetch user-specific logs from MongoDB
-          const remoteLogs = await fetchLogs(50).catch(() => []);
+          // Fetch user-specific logs from MongoDB (latest 30 for fast hydration)
+          const remoteLogs = await fetchLogs(30).catch(() => []);
           if (isMounted && Array.isArray(remoteLogs) && remoteLogs.length > 0) {
             setLogs(remoteLogs);
           }
@@ -109,7 +109,7 @@ export function useProjectMonitor() {
     };
   }, [user, isAuthenticated, setProjects, setLogs]);
 
-  // Log adding helper - records locally with 0ms latency and selectively syncs key events to MongoDB
+  // Log adding helper - records locally with 0ms latency (latest 30) and selectively syncs key events to MongoDB
   const addLog = useCallback(
     (logEntry, isPersistent = true) => {
       const newEntry = {
@@ -118,7 +118,7 @@ export function useProjectMonitor() {
         ...logEntry,
       };
 
-      setLogs((prev) => [newEntry, ...prev.slice(0, 49)]);
+      setLogs((prev) => [newEntry, ...prev.slice(0, 29)]);
 
       if (isAuthenticated && isPersistent) {
         // Save significant telemetry / audit events to MongoDB
