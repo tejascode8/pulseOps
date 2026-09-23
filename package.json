@@ -1,0 +1,22 @@
+{
+  "name": "pulseops",
+  "version": "1.0.0",
+  "description": "Full-Stack MERN Portfolio Uptime Monitor & Cold-Start Keepalive System",
+  "scripts": {
+    "start": "node backend/server.js",
+    "server": "cd backend && node server.js",
+    "client": "cd frontend && npm run dev",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install"
+  },
+  "keywords": [
+    "mern",
+    "mongodb",
+    "keepalive",
+    "uptime-monitor",
+    "cold-start",
+    "render",
+    "vercel"
+  ],
+  "author": "Tejas",
+  "license": "MIT"
+}
