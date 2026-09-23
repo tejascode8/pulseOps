@@ -64,6 +64,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 pulseOps Backend Server running on http://localhost:${PORT}`);
-});
+// Start standalone HTTP listener if not running as serverless function
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 pulseOps Backend Server running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
