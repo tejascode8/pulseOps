@@ -32,6 +32,7 @@ export function useProjectMonitor() {
   const [now, setNow] = useState(Date.now());
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [dbStatus, setDbStatus] = useState('connecting'); // 'connected' | 'connecting' | 'offline'
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
   // Keep references to open tab window handles for auto-closing
   const openTabsRef = useRef({});
@@ -82,6 +83,8 @@ export function useProjectMonitor() {
         }
       } catch {
         if (isMounted) setDbStatus('offline');
+      } finally {
+        if (isMounted) setIsLoadingProjects(false);
       }
     }
 
@@ -763,6 +766,7 @@ export function useProjectMonitor() {
     activeStaySessions,
     popupBlocked,
     dbStatus,
+    isLoadingProjects,
     setPopupBlocked,
     addProject,
     updateProject,

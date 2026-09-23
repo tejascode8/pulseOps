@@ -11,8 +11,10 @@ import ConfirmModal from './components/ConfirmModal';
 import ImportExportModal from './components/ImportExportModal';
 import BackgroundWarmer from './components/BackgroundWarmer';
 import AuthModal from './components/AuthModal';
+import UniversalSkeleton from './components/UniversalSkeleton';
 import { useProjectMonitor } from './hooks/useProjectMonitor';
 import { useAuth } from './context/AuthContext';
+import { getAuthToken } from './utils/api';
 import { Activity } from 'lucide-react';
 
 export default function App() {
@@ -27,6 +29,7 @@ export default function App() {
     activeStaySessions,
     popupBlocked,
     dbStatus,
+    isLoadingProjects,
     setPopupBlocked,
     addProject,
     updateProject,
@@ -190,29 +193,10 @@ export default function App() {
     });
   };
 
-  // Show verifying loader on initial page load
+  // Show universal skeleton on initial page load / authentication hydration
   if (isLoading) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--bg-primary)',
-          gap: '1.25rem',
-          color: 'var(--text-secondary)',
-        }}
-      >
-        <div className="brand-icon-wrapper" style={{ width: '56px', height: '56px' }}>
-          <Activity size={32} color="#ffffff" />
-        </div>
-        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Verifying pulseOps secure vault...
-        </div>
-      </div>
-    );
+    const hasCachedToken = Boolean(getAuthToken());
+    return <UniversalSkeleton variant={hasCachedToken ? 'app' : 'landing'} />;
   }
 
   // If unauthenticated, render the Landing Page
@@ -262,72 +246,78 @@ export default function App() {
         onSelectTab={setActiveTab}
       />
 
-      {/* Page Content Switching */}
-      {activeTab === 'dashboard' && (
-        <DashboardPage
-          projects={projects}
-          now={now}
-          checkingIds={checkingIds}
-          activeStaySessions={activeStaySessions}
-          popupBlocked={popupBlocked}
-          setPopupBlocked={setPopupBlocked}
-          onOpenAddModal={handleOpenAdd}
-          onPing={pingProject}
-          onRestart={restartProject}
-          onEdit={handleOpenEdit}
-          onDelete={handleDeletePrompt}
-          onToggle={(id) => {
-            toggleProject(id);
-          }}
-          onLoadDefaults={() => {
-            loadDefaultProjects();
-          }}
-          onEnableAll={handleEnableAllPrompt}
-          onDisableAll={handleDisableAllPrompt}
-          onPingAll={handlePingAllPrompt}
-          onOpenAll={handleOpenAllPrompt}
-          onClearAll={handleClearAllPrompt}
-        />
-      )}
+      {/* Page Content Switching & Universal Skeleton Loading */}
+      {isLoadingProjects ? (
+        <UniversalSkeleton variant={activeTab} />
+      ) : (
+        <>
+          {activeTab === 'dashboard' && (
+            <DashboardPage
+              projects={projects}
+              now={now}
+              checkingIds={checkingIds}
+              activeStaySessions={activeStaySessions}
+              popupBlocked={popupBlocked}
+              setPopupBlocked={setPopupBlocked}
+              onOpenAddModal={handleOpenAdd}
+              onPing={pingProject}
+              onRestart={restartProject}
+              onEdit={handleOpenEdit}
+              onDelete={handleDeletePrompt}
+              onToggle={(id) => {
+                toggleProject(id);
+              }}
+              onLoadDefaults={() => {
+                loadDefaultProjects();
+              }}
+              onEnableAll={handleEnableAllPrompt}
+              onDisableAll={handleDisableAllPrompt}
+              onPingAll={handlePingAllPrompt}
+              onOpenAll={handleOpenAllPrompt}
+              onClearAll={handleClearAllPrompt}
+            />
+          )}
 
-      {activeTab === 'schedules' && (
-        <SchedulesPage
-          projects={projects}
-          now={now}
-          onEdit={handleOpenEdit}
-          onToggle={(id) => {
-            toggleProject(id);
-          }}
-          onOpenAddModal={handleOpenAdd}
-          onUpdateProject={updateProject}
-          onEnableAll={handleEnableAllPrompt}
-          onDisableAll={handleDisableAllPrompt}
-        />
-      )}
+          {activeTab === 'schedules' && (
+            <SchedulesPage
+              projects={projects}
+              now={now}
+              onEdit={handleOpenEdit}
+              onToggle={(id) => {
+                toggleProject(id);
+              }}
+              onOpenAddModal={handleOpenAdd}
+              onUpdateProject={updateProject}
+              onEnableAll={handleEnableAllPrompt}
+              onDisableAll={handleDisableAllPrompt}
+            />
+          )}
 
-      {activeTab === 'logs' && (
-        <ActivityStreamPage
-          logs={logs}
-          projects={projects}
-          onPingAll={handlePingAllPrompt}
-          onPing={pingProject}
-          onClearLogs={handleClearLogsPrompt}
-        />
-      )}
+          {activeTab === 'logs' && (
+            <ActivityStreamPage
+              logs={logs}
+              projects={projects}
+              onPingAll={handlePingAllPrompt}
+              onPing={pingProject}
+              onClearLogs={handleClearLogsPrompt}
+            />
+          )}
 
-      {activeTab === 'settings' && (
-        <SettingsPage
-          user={user}
-          isAuthenticated={isAuthenticated}
-          projects={projects}
-          logs={logs}
-          dbStatus={dbStatus}
-          onOpenAuthModal={handleOpenAuthModal}
-          onOpenImportExport={() => setIsImportExportOpen(true)}
-          onClearAll={handleClearAllPrompt}
-          onClearLogs={handleClearLogsPrompt}
-          onLogout={handleLogoutPrompt}
-        />
+          {activeTab === 'settings' && (
+            <SettingsPage
+              user={user}
+              isAuthenticated={isAuthenticated}
+              projects={projects}
+              logs={logs}
+              dbStatus={dbStatus}
+              onOpenAuthModal={handleOpenAuthModal}
+              onOpenImportExport={() => setIsImportExportOpen(true)}
+              onClearAll={handleClearAllPrompt}
+              onClearLogs={handleClearLogsPrompt}
+              onLogout={handleLogoutPrompt}
+            />
+          )}
+        </>
       )}
 
       {/* Continuous Headless Background Warmer Frames (Runs across all pages) */}

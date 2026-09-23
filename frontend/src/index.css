@@ -5535,3 +5535,121 @@ textarea[id="vault-json-textarea"]::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* ==========================================================================
+   Universal Skeleton Loading System
+   ========================================================================== */
+
+.skeleton-app-wrapper {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.skeleton-view-container {
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Base Skeleton Bone with Luminous Pulse Shimmer */
+.skeleton-bone {
+  position: relative;
+  overflow: hidden;
+  background: rgba(203, 213, 225, 0.45);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.skeleton-bone::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: pulseSkeletonShimmer 1.6s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.skeleton-circle {
+  border-radius: 50% !important;
+}
+
+.skeleton-pill {
+  border-radius: var(--radius-pill) !important;
+}
+
+/* Skeleton Card Items */
+.skeleton-card-item {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-sm) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-card-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(79, 70, 229, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: pulseSkeletonShimmer 2s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.skeleton-stat-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.skeleton-banner-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-xl) !important;
+}
+
+.skeleton-terminal-box {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes pulseSkeletonShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulseSkeletonGlow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+
